@@ -1,0 +1,3 @@
+- Made a profile page
+- Made a functional search bar
+- 
