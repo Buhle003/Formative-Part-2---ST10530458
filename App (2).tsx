@@ -119,15 +119,18 @@ export default function App() {
   const averagePrice = totalMenuItems > 0 ? totalMenuPrice / totalMenuItems : 0;
 
   //--Count items in each course--//
+
   const starterCount = menuItems.filter((item: FoodItem) => item.course.toLowerCase() === "starter").length;
   const mainCount = menuItems.filter((item: FoodItem) => item.course.toLowerCase() === "main").length;
   const dessertCount = menuItems.filter((item: FoodItem) => item.course.toLowerCase() === "dessert").length;
 
-  //--Navigation state
+  //--Navigation state--//
+
   const [screen, setScreen] = useState<Screen>("splash");
 
 
-  //--Login state
+  //--Login state--//
+
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
@@ -137,11 +140,13 @@ export default function App() {
   const [menuVisible, setMenuVisible] = useState("");
 
 
-  //--Search state
+  //--Search state--//
+
   const [searchText, setSearchText] = useState("");
 
 
-  //--Categoreis state
+  //--Categoreis state--//
+
   const [selectedCategory, setSelectedCategory] = useState("");
   
   const [dishCategory, setDishCategory] = useState("");
@@ -156,11 +161,13 @@ export default function App() {
     : menuItems;
 
 
-  //--Cart state
+  //--Cart state--//
+
   const [cart, setCart] = useState<Array<{id: number, name: string, price: number, quantity: number}>>([]);
 
 
-  //--Selected Food state
+  //--Selected Food state--//
+
   const [selectedFood, setSelectedFood] = useState<FoodItem>(menuItems[0]);
   const [selectedFoodIndex, setSelectedFoodIndex] = useState<number>(0);
 
@@ -172,7 +179,8 @@ export default function App() {
   };
 
 
-  //--Previous,Next buttons state
+  //--Previous,Next buttons state--//
+
   const showPreviousFood = () => {
     const prevIndex = (selectedFoodIndex - 1 + menuItems.length) % menuItems.length;
     setSelectedFoodIndex(prevIndex);
@@ -186,12 +194,14 @@ export default function App() {
   };
 
 
-  //--Profile state
+  //--Profile state--//
+
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
 
 
-  //--Reservation state
+  //--Reservation state--//
+
   const [guests, setGuests] = useState<string>("");
   const [date, setDate] = useState<string>("");
   const [time, setTime] = useState<string>("");
@@ -201,6 +211,7 @@ export default function App() {
 
 
   //--Chef menu state--//
+
   const [dishName, setDishName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [course, setCourse] = useState<string>("");
@@ -210,20 +221,86 @@ export default function App() {
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
 
 
-  //--Editing menu items--//
+//--Edit menu item--//
 
-  const editMenuItem = (item: FoodItem) => {
-    setDishName(item.name);
-    setDescription(item.description);
-    setCourse(item.course.charAt(0).toUpperCase() + item.course.slice(1));
-    setDishCategory(item.category);
-    setPrice(item.price.toString());
-    setEditingItemId(item.id);
-    setErrorMessage("");
+   const editMenuItem = (item: FoodItem) => {
+  setDishName(item.name);
+  setDescription(item.description);
+  setCourse(item.course);
+  setDishCategory(item.category);
+  setPrice(item.price.toString());
 
-    Alert.alert("Edit Menu Item", "You can now update this dish.")
+  setEditingItemId(item.id);
+  setErrorMessage("");
+};
+
+
+//--Add menu item--//
+    
+const addMenuItem = () => {
+  setErrorMessage("");
+
+  if (
+    dishName.trim() === "" ||
+    description.trim() === "" ||
+    course.trim() === "" ||
+    price.trim() === ""
+  ) {
+    setErrorMessage("Please complete all required fields.");
+    return;
+  }
+
+  const numericPrice = Number(price);
+
+  if (isNaN(numericPrice) || numericPrice <= 0) {
+    setErrorMessage("Please enter a valid price.");
+    return;
+  }
+
+  const updatedItem: FoodItem = {
+    id: editingItemId !== null ? editingItemId : Date.now(),
+    name: dishName.trim(),
+    description: description.trim(),
+    course: course.toLowerCase(),
+    category: dishCategory.trim(),
+    price: numericPrice,
+    emoji: "🍽️",
+    ingredients: "",
   };
 
+  if (editingItemId !== null) {
+    // Update the existing dish
+    setMenuItems(previousItems =>
+      previousItems.map(item =>
+        item.id === editingItemId ? updatedItem : item
+      )
+    );
+
+    setSelectedFood(previousFood =>
+      previousFood?.id === editingItemId
+        ? updatedItem
+        : previousFood
+    );
+
+    Alert.alert("Success", "Dish updated successfully!");
+  } else {
+    // Add a new dish
+    setMenuItems(previousItems => [
+      ...previousItems,
+      updatedItem,
+    ]);
+
+    Alert.alert("Success", "New dish added successfully!");
+  }
+
+  // Clear the form
+  setDishName("");
+  setDescription("");
+  setCourse("");
+  setDishCategory("");
+  setPrice("");
+  setEditingItemId(null);
+};
 
   //--Deleting menu item--//
 
@@ -259,24 +336,7 @@ export default function App() {
         },
       ]
     );
-  };
 
-
-  //-- Add menu item function --//
-
-  const addMenuItem = () => {
-    setErrorMessage("");
-
-  const newItem: FoodItem = {
-   id: editingItemId !== null ? editingItemId : Date.now(),
-   name: dishName.trim(),
-   description: description.trim(),
-   course: course.toLowerCase(),
-   category: dishCategory.trim(),
-   price: numericPrice,
-   emoji: "🍽️",
-   ingredients: "",
-};
 
     //Check required fields -//
     //validation -//
@@ -300,6 +360,7 @@ export default function App() {
     }
 
     //--Create new item --//
+
     const newMenuItem: MenuItems = {
       id: editingItemId !== null ? editingItemId : Date.now(),
       dishName: dishName.trim(),
@@ -309,6 +370,7 @@ export default function App() {
     };
 
     //--Add item to menu --//
+
     if (editingItemId !== null) {
       setChefMenuItems((previousItems: MenuItems[]) =>
         previousItems.map((item: MenuItems) =>
@@ -345,8 +407,7 @@ export default function App() {
     setCourse("");
     setPrice("");
     setEditingItemId(null);
-  };
-
+  }
 
   //--Splash screen
 
@@ -382,7 +443,7 @@ export default function App() {
         
       </SafeAreaView>
     );
-}
+  }
 
 
 //--Login screen
@@ -625,17 +686,19 @@ export default function App() {
         </View>
       
       {/* SEARCH RESULTS - Only visible when searching */}
-{searchText.length > 0 && (
-  <View>
-    {filteredMenuItems.length > 0 ? (
-      filteredMenuItems.map((item) => (
+
+       {searchText.length > 0 && (
+
+         <View>
+          {filteredMenuItems.length > 0 ? (
+           filteredMenuItems.map((item) => (
         <TouchableOpacity
-          key={item.id}
-          onPress={() => {
+            key={item.id}
+            onPress={() => {
             setSelectedFood(item);
             setScreen("foodDetails");
-          }}
-        >
+            }}
+              >
           <Text>{item.emoji} {item.name}</Text>
           <Text>R{item.price.toFixed(2)}</Text>
         </TouchableOpacity>
@@ -1284,9 +1347,7 @@ if (screen === "foodDetails") {
             Fresh Bun
           </Text>
 
-
         </View>
-
 
         <TouchableOpacity
         style={styles.addButton}
@@ -2859,7 +2920,7 @@ if (screen === "profile") {
 
  // Fallback render for other screens
   return null;
-}
+};
 
 
 //--Styles --//
