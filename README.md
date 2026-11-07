@@ -1,3 +1,3 @@
+- Added a new app file because I was struggling opening and editing the zipped app file
 - Made a profile page
 - Made a functional search bar
-- 
