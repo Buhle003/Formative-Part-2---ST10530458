@@ -1,3 +1,9 @@
 - Added a new app file because I was struggling opening and editing the zipped app file
 - Made a profile page
 - Made a functional search bar
+- Added a map to the tracking screen
+- Made the buttons on the profile functional
+- Did not add a search filter, struggled to do that
+- Decided to keep the app plain to focus on functionality of the application
+- Included a log out button
+- Added a bottom navigation to most screens
