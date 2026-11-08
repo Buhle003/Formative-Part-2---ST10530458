@@ -7,3 +7,4 @@
 - Decided to keep the app plain to focus on functionality of the application
 - Included a log out button
 - Added a bottom navigation to most screens
+- Changed payment functions and changed payment screen spelling
