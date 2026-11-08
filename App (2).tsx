@@ -35,7 +35,7 @@ type MenuItems =
   id: number;
   dishName: string;
   description: string;
-  emoji?: string;
+  emoji: string;
   course: string;
   price: string;
 };
@@ -110,12 +110,13 @@ export default function App() {
   //-- Menu stats --//
   const totalMenuItems = menuItems.length;
 
+
   //--Calculate average price--//
+
   const totalMenuPrice = menuItems.reduce(
     (total, item) => total + item.price,
     0
   );
-
   const averagePrice = totalMenuItems > 0 ? totalMenuPrice / totalMenuItems : 0;
 
   //--Count items in each course--//
@@ -133,9 +134,24 @@ export default function App() {
 
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [loginError, setLoginError] = useState<string>("");
+
+
+  //--Profile state--//
+  
+const [isEditingProfile, setIsEditingProfile] = useState(false);
+const [editName, setEditName] = useState(userName);
+const [editEmail, setEditEmail] = useState(userEmail);
+const [profileLocation, setProfileLocation] = useState("");
+const [editLocation, setEditLocation] = useState("");
+const [notificationsEnabled, setNotificationsEnabled] = useState(true); 
+const [showEditProfile, setShowEditProfile] = useState(false);
+const [showLocation, setShowLocation] = useState(false);
+const [showPayment, setShowPayment] = useState(false);
 
 
   //--Menu state--//
+
   const [menuOpen,setMenuOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState("");
 
@@ -147,12 +163,13 @@ export default function App() {
 
   //--Categoreis state--//
 
-  const [selectedCategory, setSelectedCategory] = useState("");
-  
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [dishCategory, setDishCategory] = useState("");
+  const filteredCategoryItems = menuItems.filter((item) => item.category?.trim().toLowerCase() === selectedCategory.trim().toLowerCase);
 
 
-  //--Filter state
+  //--Filter state--//
+
   const filteredMenuItems = menuItems.filter((item) =>
     item.name.toLowerCase().includes(searchText.toLowerCase())
   );
@@ -210,6 +227,17 @@ export default function App() {
   const [phone, setPhone] = useState<string>("");
 
 
+//--Payment state--//
+  
+const [paymentMethod, setPaymentMethod] = useState("Card");
+const [cardType, setCardType] = useState("Visa");
+
+const [cardName, setCardName] = useState("");
+const [cardNumber, setCardNumber] = useState("");
+const [expiryDate, setExpiryDate] = useState("");
+const [cvv, setCvv] = useState("");
+
+
   //--Chef menu state--//
 
   const [dishName, setDishName] = useState<string>("");
@@ -229,7 +257,6 @@ export default function App() {
   setCourse(item.course);
   setDishCategory(item.category);
   setPrice(item.price.toString());
-
   setEditingItemId(item.id);
   setErrorMessage("");
 };
@@ -268,8 +295,10 @@ const addMenuItem = () => {
     ingredients: "",
   };
 
+
+//--Update existing dish--//
+
   if (editingItemId !== null) {
-    // Update the existing dish
     setMenuItems(previousItems =>
       previousItems.map(item =>
         item.id === editingItemId ? updatedItem : item
@@ -284,7 +313,9 @@ const addMenuItem = () => {
 
     Alert.alert("Success", "Dish updated successfully!");
   } else {
-    // Add a new dish
+
+    //--Add a new dish--//
+
     setMenuItems(previousItems => [
       ...previousItems,
       updatedItem,
@@ -293,7 +324,8 @@ const addMenuItem = () => {
     Alert.alert("Success", "New dish added successfully!");
   }
 
-  // Clear the form
+  // Clear the form--//
+
   setDishName("");
   setDescription("");
   setCourse("");
@@ -302,112 +334,18 @@ const addMenuItem = () => {
   setEditingItemId(null);
 };
 
-  //--Deleting menu item--//
 
-  const deleteMenuItem = (itemId: number) => {
-    Alert.alert(
-      "Delete Menu Item",
-      "Are you sure you want to delete this item?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            setMenuItems((previousItems: FoodItem[]) =>
-              previousItems.filter((item: FoodItem) => item.id !== itemId)
-            );
+const deleteMenuItem = (itemId: number) => {
+  console.log("Delete button pressed. Item ID:", itemId);
 
-            Alert.alert("Deleted", "Menu item deleted successfully!");
+  setMenuItems(previousItems =>
+    previousItems.filter(item => item.id !== itemId)
+  );
 
-            //--Clear form--//
-            if (editingItemId === itemId) {
-              setDishName("");
-              setDescription("");
-              setCourse("");
-              setPrice("");
-              setEditingItemId(null);
-            }
-
-          },
-        },
-      ]
-    );
+  Alert.alert("Deleted", "The dish has been removed.");
+};
 
 
-    //Check required fields -//
-    //validation -//
-
-    if (
-      dishName.trim() === "" ||
-      description.trim() === "" ||
-      course.trim() === "" ||
-      dishCategory.trim() === "" || 
-      price.trim() === ""
-    ) {
-      setErrorMessage("Please complete all required fields.");
-      return;
-    }
-
-    const numericPrice = Number(price);
-
-    if (isNaN(numericPrice) || numericPrice <= 0) {
-      setErrorMessage("Please enter a valid price.");
-      return;
-    }
-
-    //--Create new item --//
-
-    const newMenuItem: MenuItems = {
-      id: editingItemId !== null ? editingItemId : Date.now(),
-      dishName: dishName.trim(),
-      description: description.trim(),
-      course: course.toLowerCase(),
-      price: numericPrice.toString(),
-    };
-
-    //--Add item to menu --//
-
-    if (editingItemId !== null) {
-      setChefMenuItems((previousItems: MenuItems[]) =>
-        previousItems.map((item: MenuItems) =>
-          item.id === editingItemId ? newMenuItem : item
-        )
-      );
-
-      //Keep currently selected food--//
-      setSelectedFood((previousFood: FoodItem) =>
-        previousFood.id === editingItemId ? { ...previousFood, ...newMenuItem, name: newMenuItem.dishName } : previousFood
-      );
-
-      Alert.alert("Success", "Menu item updated successfully!");
-    } else {
-      setMenuItems((previousItems: FoodItem[]) => [
-        ...previousItems,
-        {
-          id: newMenuItem.id,
-          name: newMenuItem.dishName,
-          price: Number(newMenuItem.price),
-          emoji: "🍽️",
-          description: newMenuItem.description,
-          ingredients: "",
-          course: newMenuItem.course,
-        },
-      ]);
-
-      Alert.alert("Success", "Menu item added successfully!");
-    }
-
-    //--Clear inputs --//
-    setDishName("");
-    setDescription("");
-    setCourse("");
-    setPrice("");
-    setEditingItemId(null);
-  }
 
   //--Splash screen
 
@@ -446,71 +384,87 @@ const addMenuItem = () => {
   }
 
 
-//--Login screen
+//--Login screen--//
 
-    if (screen === "login") {
+   if (screen === "login") {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.loginContainer}>
 
-      return (
+        <Text style={styles.logo}>
+          🍽️
+        </Text>
 
-        <SafeAreaView style={styles.container}>
+        <Text style={styles.title}>
+          Welcome Back!
+        </Text>
 
-          <View style={styles.loginContainer}>
+        <Text style={styles.subtitle}>
+          Login to continue
+        </Text>
 
-            <Text style={styles.logo}>
-              🍽️
-            </Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Email address"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={(text) => {
+            setEmail(text);
+            setLoginError("");
+          }}
+        />
 
-            <Text style={styles.title}>
-              Welcome Back!
-            </Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          secureTextEntry={true}
+          value={password}
+          onChangeText={(text) => {
+            setPassword(text);
+            setLoginError("");
+          }}
+        />
 
-          <Text style={styles.subtitle}>
-            Login to continue
-            </Text>
+        {/* Login error message */}
+        {loginError !== "" && (
+          <Text style={styles.errorText}>
+            {loginError}
+          </Text>
+        )}
 
-            <TextInput
-              style={styles.input}
-              placeholder="Email address"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              secureTextEntry={true}
-              value={password}
-              onChangeText={setPassword}
-            />
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={() => {
 
-            <TouchableOpacity style={styles.loginButton} onPress={() => {
-                if (email === "" || password === "") {
-                  Alert.alert(
-                    "Error",
-                    "Please enter your email and password."
-                  ); 
-                } else {
-                  setScreen("home");
-                } 
-            }}>
+            if (email.trim() === "" || password === "") {
+              setLoginError("Please enter your email and password.");
+              return;
+            }
 
-              <Text style={styles.buttonText}>
-                Login
-              </Text>
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+              setLoginError("Please enter a valid email address.");
+              return;
+            }
 
-            </TouchableOpacity>
-            
-          </View>
+            setLoginError("");
+            setScreen("home");
 
-          </SafeAreaView>
-              
-      );
-  }
+          }}
+        >
+          <Text style={styles.buttonText}>
+            Login
+          </Text>
+        </TouchableOpacity>
+
+      </View>
+    </SafeAreaView>
+  );
+
+}
 
 
-  //--Home screen
+  //--Home screen--//
 
   if (screen === "home") {
 
@@ -523,7 +477,6 @@ const addMenuItem = () => {
           {/* Header */}
 
           <View style={styles.header}>
-
 
           <TouchableOpacity onPress={() => 
           setMenuOpen(!menuOpen)}
@@ -557,6 +510,7 @@ const addMenuItem = () => {
     </TouchableOpacity>
 
      {/* FOOD MENU */}
+
     <TouchableOpacity
       style={styles.menuItem}
       onPress={() => {
@@ -567,7 +521,9 @@ const addMenuItem = () => {
       <Text style={styles.menuText}>🍽️ Browse Food Menu</Text>
     </TouchableOpacity>
 
+
     {/* CART */}
+
     <TouchableOpacity
       style={styles.menuItem}
       onPress={() => {
@@ -579,6 +535,7 @@ const addMenuItem = () => {
     </TouchableOpacity>
 
     {/* TRACK ORDER */}
+
     <TouchableOpacity
       style={styles.menuItem}
       onPress={() => {
@@ -622,6 +579,7 @@ const addMenuItem = () => {
               </TouchableOpacity>
 
                {/* PROFILE */}
+
     <TouchableOpacity
       style={styles.menuItem}
       onPress={() => {
@@ -650,7 +608,6 @@ const addMenuItem = () => {
             </View>
           )}
 
-        
 
             {/* Profile button */}
 
@@ -835,9 +792,6 @@ const addMenuItem = () => {
 
           </TouchableOpacity>
 
-           
-          
-
           </View>
 
         </ScrollView>
@@ -860,7 +814,6 @@ const addMenuItem = () => {
             </Text>
 
           </TouchableOpacity>
-
 
         </View>
 
@@ -903,6 +856,7 @@ const addMenuItem = () => {
 
           ))}
 
+                  
         </ScrollView>
       
   </ScrollView>
@@ -997,27 +951,22 @@ if (screen === "category") {
 
   const categoryItems = menuItems.filter(
     (item) =>
-      item.course.toLowerCase() ===
-    selectedCategory.toLowerCase()
+      item.category?.trim().toLowerCase() ===
+      selectedCategory.trim().toLowerCase()
   );
 
   return (
-
     <SafeAreaView style={styles.container}>
 
-      {/* Header*/}
-
+      {/* Header */}
       <View style={styles.header}>
 
         <TouchableOpacity
-        onPress={() =>
-          setScreen("home")
-        }>
-
-        <Text style={styles.backButton}>
+          onPress={() => setScreen("home")}
+        >
+          <Text style={styles.backButton}>
             ←
           </Text>
-
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>
@@ -1029,65 +978,46 @@ if (screen === "category") {
       </View>
 
       {/* Category title */}
-
       <Text style={styles.categoryScreenTitle}>
         {selectedCategory} Menu
       </Text>
 
-      {/*Food items */}
-
+      {/* Food items */}
       <ScrollView
-      contentContainerStyle={styles.categoryFoodContainer}>
+        contentContainerStyle={styles.categoryFoodContainer}
+      >
 
-        {/* Item check */}
-
-        {categoryItems.length === 0 ? (
-
-          <View style={styles.emptyContainer}>
-
-            <Text style={styles.emptyText}>
-              No items currently available in this category.
-            </Text>
-
-          </View>
-
-
-        ) : (
+        {categoryItems.length > 0 ? (
 
           categoryItems.map((item) => (
 
             <TouchableOpacity
-            key={item.id}
-            style={styles.categoryFoodCard}
-            onPress={() => {
-              setSelectedFood(item);
-              setScreen("foodDetails");
-            }}>
+              key={item.id}
+              style={styles.categoryFoodCard}
+              onPress={() => {
+                setSelectedFood(item);
+                setScreen("foodDetails");
+              }}
+            >
 
-              
               {/* Food image */}
-
               <Text style={styles.categoryFoodEmoji}>
                 {item.emoji}
               </Text>
 
               <View style={styles.categoryFoodInfo}>
 
-
                 {/* Name */}
-
                 <Text style={styles.categoryFoodName}>
                   {item.name}
                 </Text>
 
                 {/* Description */}
-
                 <Text style={styles.categoryFoodDescription}>
                   {item.description}
                 </Text>
 
                 {/* Price */}
-
                 <Text style={styles.categoryFoodPrice}>
                   R{item.price}
                 </Text>
@@ -1097,7 +1027,13 @@ if (screen === "category") {
             </TouchableOpacity>
 
           ))
-        
+
+        ) : (
+
+          <Text>
+            No food items available in this category.
+          </Text>
+
         )}
 
       </ScrollView>
@@ -1188,9 +1124,21 @@ if (screen === "foodDetails") {
      
     <SafeAreaView style={styles.container}>
 
-      <ScrollView>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 20,
+          paddingBottom: 30,
+        }}
+        showsVerticalScrollIndicator={true}
+        keyboardShouldPersistTaps="handled"
+      >
 
         <View style={styles.header}>
+  
+          <Text style={styles.headerTitle}>
+            Food Details
+          </Text>
 
           <TouchableOpacity
           onPress={() =>
@@ -1215,7 +1163,6 @@ if (screen === "foodDetails") {
 
             </TouchableOpacity>
 
-
             <TouchableOpacity
           style={styles.nextButton}
           onPress={showNextFood}>
@@ -1226,12 +1173,8 @@ if (screen === "foodDetails") {
 
             </TouchableOpacity>
 
-
-          <Text style={styles.headerTitle}>
-            Food Details
-          </Text>
-
           <View />
+
         </View>
 
       </View>
@@ -1286,68 +1229,9 @@ if (screen === "foodDetails") {
 
           </View>
 
-          {/* Add to cart */}
-
-          <TouchableOpacity
-          style={styles.loginButton}
-          onPress={() => {
-
-            Alert.alert(
-              "Added to Cart",
-              selectedFood.name +
-              "has been added to your cart."
-                 );
-
-          }}>
-
-            <Text style={styles.buttonText}>
-              Add to Cart
-            </Text>
-
-            </TouchableOpacity>
-
-
         </ScrollView>
 
-
-        <View style={styles.foodImageLarge}>
-
-          <Text style={styles.largeEmoji}>
-            🍔
-          </Text>
-
-        </View>
-
-
-        <View style={styles.detailsBox}>
-
-          <Text style={styles.detailsTitle}>
-            Classic Burger
-          </Text>
-
-          <Text>
-            Made with the freshest ingredients.
-          </Text>
-
-
-        </View>
-
-
-        <View style={styles.detailsBox}>
-
-          <Text style={styles.detailsTitle}>
-            Ingredients
-          </Text>
-
-          <Text>
-            Beef Patty{"\n"}
-            Chesse{"\n"}
-            Lettuce{"\n"}
-            Tomato{"\n"}
-            Fresh Bun
-          </Text>
-
-        </View>
+        {/* Add to Cart */}
 
         <TouchableOpacity
         style={styles.addButton}
@@ -1371,7 +1255,6 @@ if (screen === "foodDetails") {
           );
 
         }}>
-
 
           <Text style={styles.buttonText}>
             Add to cart
@@ -1469,8 +1352,6 @@ if (screen === "cart") {
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Your Cart</Text>
-
-        <Text>⋮</Text>
 
       </View>
 
@@ -1578,35 +1459,72 @@ if (screen === "checkout") {
 
 
           <Text style={styles.orderId}>
-            Order Id: #12345
+            Order Id: #####
           </Text>
 
-          <View style={styles.checkoutBox}>
+           
+<View style={{
+  backgroundColor: "#FFFFFF",
+  borderRadius: 12,
+  padding: 15,
+  marginBottom: 15,
+  borderWidth: 1,
+  borderColor: "#CCCCCC",
+}}>
 
-            <Text>
-              Display users order
-            </Text>
+  <Text style={{
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+  }}>
+    Your Order
+  </Text>
 
-          </View>
+  {cart.length > 0 ? (
 
+    cart.map((item, index) => (
+
+      <View
+        key={`${item.id}-${index}`}
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingVertical: 10,
+          borderBottomWidth: 1,
+          borderBottomColor: "#EEEEEE",
+        }}
+      >
+
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 16 }}>
+            {item.emoji} {item.name}
+          </Text>
+        </View>
+
+        <Text style={{
+          fontSize: 16,
+          fontWeight: "bold",
+        }}>
+          R{item.price.toFixed(2)}
+        </Text>
+
+      </View>
+
+    ))
+
+  ) : (
+
+    <Text>Your cart is currently empty.</Text>
+
+  )}
+
+</View>
 
           <View style={styles.checkoutBox}>
 
             <Text>
               Discount
-            </Text>
-
-
-          </View>
-
-          <View style={styles.checkoutBox}>
-
-            <Text>
-              Final Amount
-            </Text>
-
-            <Text>
-              R{cart.length * 60}
             </Text>
 
           </View>
@@ -1623,56 +1541,79 @@ if (screen === "checkout") {
 
           </TouchableOpacity>
 
-             {/* Bottom Navigation*/}
+              {/* Bottom Navigation */}
 
-    <View style={styles.bottomNav}>
+      <View style={styles.bottomNavigation}>
 
-      <TouchableOpacity>
 
-        <Text>
-          Home
-        </Text>
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => setScreen("home")}
+        >
 
-      </TouchableOpacity>
+          <Text style={styles.navText}>
+            🏠
+          </Text>
 
-      <TouchableOpacity
-        onPress={() => 
-          setScreen("tracking")
-          }>
+          <Text style={styles.navText}>
+            Home
+          </Text>
 
-          <Text>
+        </TouchableOpacity>
+
+
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => setScreen("tracking")}
+        >
+
+          <Text style={styles.navText}>
+            📍
+          </Text>
+
+          <Text style={styles.navText}>
             Track
           </Text>
 
-      </TouchableOpacity>
+        </TouchableOpacity>
 
-      <TouchableOpacity
-       onPress={() =>
-        setScreen("cart")
-       }>
 
-        <Text>
-          Cart
-        </Text>
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => setScreen("cart")}
+        >
 
-       </TouchableOpacity>
+          <Text style={styles.navText}>
+            🛒
+          </Text>
 
-       <TouchableOpacity
-        onPress={() =>
-          setScreen("reservation")
-        }>
+          <Text style={styles.navText}>
+            Cart
+          </Text>
 
-          <Text>
+        </TouchableOpacity>
+
+
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => setScreen("profile")}
+        >
+
+          <Text style={styles.navText}>
+            👤
+          </Text>
+
+          <Text style={styles.navText}>
             Profile
-            </Text>
+          </Text>
 
-       </TouchableOpacity>
+        </TouchableOpacity>
 
-    </View>
+      </View>
 
-        </ScrollView>
+    </ScrollView>
 
-    </SafeAreaView>
+  </SafeAreaView>
 
   );
 }
@@ -1680,93 +1621,296 @@ if (screen === "checkout") {
 
 //--Payment method screen --//
 
-if (screen === "payment") {
+      if (screen === "payment") {
 
   return (
 
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { flex: 1 }]}>
 
-      <View style={styles.paymentContainer}>
-
-        <Text style={styles.title}>
-          Select payment method
-        </Text>
+      <View style={styles.header}>
 
         <TouchableOpacity
-        style={styles.paymentButton}>
+          onPress={() =>
+            setScreen("checkout")
+          }>
 
-          <Text>
-            💳 Card
-          </Text>
+            <Text style={styles.backButton}>
+              ←
+            </Text>
 
-        </TouchableOpacity>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-        style={styles.paymentButton}>
 
-          <Text>
-            PayPal
-          </Text>
-
-        </TouchableOpacity>
-
-        <Text style={styles.paymentLabel}>
-          Select Card
-        </Text>
-
-        <View style={styles.cardBox}>
-
-          <Text>
-            Visa    Matercard     Other
+          <Text style={styles.headerTitle}>
+            Paymeny
           </Text>
 
           <View />
 
+      </View>
+
+      {/* Scrollable Payment Content */}
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 20,
+          paddingBottom: 30,
+        }}
+        showsVerticalScrollIndicator={true}
+        keyboardShouldPersistTaps="handled"
+      >
+
+        <View style={styles.paymentContainer}>
+
+          <Text style={styles.title}>
+            Select Payment Method
+          </Text>
+
+          {/* Card Payment */}
+
+          <TouchableOpacity
+            style={[
+              styles.paymentButton,
+              {
+                backgroundColor:
+                  paymentMethod === "Card" ? "#DCEBFF" : "#FFFFFF",
+                borderWidth: paymentMethod === "Card" ? 2 : 1,
+                borderColor:
+                  paymentMethod === "Card" ? "#1565C0" : "#CCCCCC",
+              },
+            ]}
+            onPress={() => setPaymentMethod("Card")}
+          >
+            <Text>💳 Card</Text>
+          </TouchableOpacity>
+
+          {/* PayPal Payment */}
+
+          <TouchableOpacity
+            style={[
+              styles.paymentButton,
+              {
+                backgroundColor:
+                  paymentMethod === "PayPal" ? "#DCEBFF" : "#FFFFFF",
+                borderWidth: paymentMethod === "PayPal" ? 2 : 1,
+                borderColor:
+                  paymentMethod === "PayPal" ? "#1565C0" : "#CCCCCC",
+              },
+            ]}
+            onPress={() => setPaymentMethod("PayPal")}
+          >
+            <Text>PayPal</Text>
+          </TouchableOpacity>
+
+          {/* Card Details */}
+
+          {paymentMethod === "Card" && (
+
+            <View>
+
+              <Text style={styles.paymentLabel}>
+                Select Card
+              </Text>
+
+              <View style={styles.cardBox}>
+
+                {["Visa", "Mastercard", "Other"].map((type) => (
+
+                  <TouchableOpacity
+                    key={type}
+                    onPress={() => setCardType(type)}
+                    style={{
+                      padding: 10,
+                      backgroundColor:
+                        cardType === type ? "#DCEBFF" : "#FFFFFF",
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor:
+                        cardType === type ? "#1565C0" : "#CCCCCC",
+                    }}
+                  >
+                    <Text>{type}</Text>
+                  </TouchableOpacity>
+
+                ))}
+
+              </View>
+
+              <TextInput
+                style={styles.input}
+                placeholder="Name on card"
+                value={cardName}
+                onChangeText={setCardName}
+              />
+
+              <TextInput
+                style={styles.input}
+                placeholder="Card Number"
+                value={cardNumber}
+                onChangeText={setCardNumber}
+                keyboardType="numeric"
+                maxLength={19}
+              />
+
+              <View style={styles.cardInputRow}>
+
+                <TextInput
+                  style={styles.smallInput}
+                  placeholder="MM/YY"
+                  value={expiryDate}
+                  onChangeText={setExpiryDate}
+                  keyboardType="numeric"
+                  maxLength={5}
+                />
+
+                <TextInput
+                  style={styles.smallInput}
+                  placeholder="CVV"
+                  value={cvv}
+                  onChangeText={setCvv}
+                  keyboardType="numeric"
+                  secureTextEntry
+                  maxLength={4}
+                />
+
+              </View>
+
+            </View>
+
+          )}
+
+          {/* PayPal Information */}
+
+          {paymentMethod === "PayPal" && (
+
+            <View style={styles.cardBox}>
+              <Text>
+                PayPal selected.
+              </Text>
+              <Text>
+                PayPal payment integration is not connected yet.
+              </Text>
+            </View>
+
+          )}
+
+          {/* Place Order */}
+
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() => {
+
+              if (paymentMethod === "Card") {
+
+                if (
+                  cardName.trim() === "" ||
+                  cardNumber.trim() === "" ||
+                  expiryDate.trim() === "" ||
+                  cvv.trim() === ""
+                ) {
+                  Alert.alert(
+                    "Missing Information",
+                    "Please complete all card details."
+                  );
+                  return;
+                }
+
+              }
+
+              Alert.alert(
+                "Order Confirmation",
+                "Your demo order is ready to be confirmed.",
+                [
+                  {
+                    text: "Continue",
+                    onPress: () => setScreen("confirmation"),
+                  },
+                ]
+              );
+
+            }}
+          >
+            <Text style={styles.buttonText}
+            onPress={() => setScreen("confirmation")}>
+              Place Order
+            </Text>
+          </TouchableOpacity>
+
         </View>
 
-        <TextInput
-        style={styles.input}
-        placeholder="Name on card"
-        />
 
-        <TextInput
-        style={styles.input}
-          placeholder="Card Number"
-          keyboardType="numeric"
-          />
+         {/* Bottom Navigation */}
 
-        <View style={styles.cardInputRow}>
-
-          <TextInput
-          style={styles.smallInput}
-          placeholder="MM/YY"
-          />
-
-          <TextInput
-          style={styles.smallInput}
-          placeholder="CVV"
-          secureTextEntry
-          />
-
-        </View>
+      <View style={styles.bottomNavigation}>
 
 
         <TouchableOpacity
-        style={styles.loginButton}
-        onPress={() =>
-          setScreen("confirmation")
-        }>
+          style={styles.navButton}
+          onPress={() => setScreen("home")}
+        >
 
-
-          <Text style={styles.buttonText}>
-            Place Order
+          <Text style={styles.navText}>
+            🏠
           </Text>
 
+          <Text style={styles.navText}>
+            Home
+          </Text>
 
         </TouchableOpacity>
 
-      
+
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => setScreen("tracking")}
+        >
+
+          <Text style={styles.navText}>
+            📍
+          </Text>
+
+          <Text style={styles.navText}>
+            Track
+          </Text>
+
+        </TouchableOpacity>
+
+
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => setScreen("cart")}
+        >
+
+          <Text style={styles.navText}>
+            🛒
+          </Text>
+
+          <Text style={styles.navText}>
+            Cart
+          </Text>
+
+        </TouchableOpacity>
+
+
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => setScreen("profile")}
+        >
+
+          <Text style={styles.navText}>
+            👤
+          </Text>
+
+          <Text style={styles.navText}>
+            Profile
+          </Text>
+
+        </TouchableOpacity>
+
       </View>
+
+      </ScrollView>
 
     </SafeAreaView>
 
@@ -1782,6 +1926,31 @@ if (screen === "confirmation") {
   return (
 
     <SafeAreaView style={styles.container}>
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 20,
+          paddingBottom: 30,
+        }}
+        showsVerticalScrollIndicator={true}
+        keyboardShouldPersistTaps="handled"
+      >
+
+       <View style={styles.header}>
+
+        <TouchableOpacity
+        onPress={() =>
+          setScreen("home")
+        }>
+
+          <Text style={styles.backButton}>
+            ←
+          </Text>
+
+        </TouchableOpacity>
+
+      </View>
 
       <View style={styles.confirmationContainer}>
 
@@ -1836,6 +2005,8 @@ if (screen === "confirmation") {
 
       </View>
 
+      </ScrollView>
+
     </SafeAreaView>
 
   );
@@ -1850,6 +2021,16 @@ if (screen === "tracking") {
   return (
 
     <SafeAreaView style={styles.container}>
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 20,
+          paddingBottom: 30,
+        }}
+        showsVerticalScrollIndicator={true}
+        keyboardShouldPersistTaps="handled"
+      >
 
       <View style={styles.header}>
 
@@ -1967,6 +2148,8 @@ if (screen === "tracking") {
 
       </View>
 
+      </ScrollView>
+
     </SafeAreaView>
 
   );
@@ -1983,7 +2166,14 @@ if (screen === "reservation") {
     <SafeAreaView style={styles.container}>
 
       <ScrollView
-        contentContainerStyle={styles.reservationContainer}>
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 20,
+          paddingBottom: 30,
+        }}
+        showsVerticalScrollIndicator={true}
+        keyboardShouldPersistTaps="handled"
+      >
 
           <View style={styles.header}>
 
@@ -2000,16 +2190,12 @@ if (screen === "reservation") {
 
 
           <Text style={styles.headerTitle}>
-            FoodDetails
+              Make A Reservation
           </Text>
-
-          <View />
 
           </View>
 
-          <Text style={styles.title}>
-            Make a reservation
-          </Text>
+          <View />
 
           <TextInput
           style={styles.input}
@@ -2100,6 +2286,75 @@ if (screen === "reservation") {
 
         </ScrollView>
 
+ {/* Bottom Navigation */}
+
+      <View style={styles.bottomNavigation}>
+
+
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => setScreen("home")}
+        >
+
+          <Text style={styles.navText}>
+            🏠
+          </Text>
+
+          <Text style={styles.navText}>
+            Home
+          </Text>
+
+        </TouchableOpacity>
+
+
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => setScreen("tracking")}
+        >
+
+          <Text style={styles.navText}>
+            📍
+          </Text>
+
+          <Text style={styles.navText}>
+            Track
+          </Text>
+
+        </TouchableOpacity>
+
+
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => setScreen("cart")}
+        >
+
+          <Text style={styles.navText}>
+            🛒
+          </Text>
+
+          <Text style={styles.navText}>
+            Cart
+          </Text>
+
+        </TouchableOpacity>
+
+
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => setScreen("profile")}
+        >
+
+          <Text style={styles.navText}>
+            👤
+          </Text>
+
+          <Text style={styles.navText}>
+            Profile
+          </Text>
+
+        </TouchableOpacity>
+
+      </View>
 
     </SafeAreaView>
 
@@ -2115,6 +2370,16 @@ if (screen === "reservationConfirmation") {
   return (
 
     <SafeAreaView style={styles.container}>
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 20,
+          paddingBottom: 30,
+        }}
+        showsVerticalScrollIndicator={true}
+        keyboardShouldPersistTaps="handled"
+      >
 
       <View style={styles.confirmationContainer}>
 
@@ -2188,6 +2453,8 @@ if (screen === "reservationConfirmation") {
           </TouchableOpacity>
 
       </View>
+
+      </ScrollView>
 
     </SafeAreaView>
 
@@ -2578,9 +2845,10 @@ if (screen === "chefMenu") {
                      {/* DELETE BUTTON */}
 
                    <TouchableOpacity
-                   onPress={() => editMenuItem(item)}
+                   onPress={() => { 
+                   deleteMenuItem(item.id)}}
                      style={{
-                     backgroundColor: "#D32F2F",
+                    backgroundColor: "#D32F2F",
                      padding: 12,
                      borderRadius: 8,
                      flex: 1,
@@ -2590,6 +2858,7 @@ if (screen === "chefMenu") {
                    <Text style={{ color: "#FFFFFF", fontWeight: "bold" }}>
                      🗑️ Delete
                    </Text>
+
                   </TouchableOpacity>
 
                    </View>
@@ -2675,96 +2944,232 @@ if (screen === "profile") {
         {/* Edit Profile Button */}
 
         <TouchableOpacity
-          style={styles.editProfileButton}
-          onPress={() => {
+  style={styles.editProfileButton}
+  onPress={() => {
+  setEditName(userName);
+  setEditEmail(userEmail);
+  setShowEditProfile(!showEditProfile);
+}}
+>
+  <Text style={styles.editProfileText}>
+    {showEditProfile ? "Close Edit Profile ▲" : "✏️ Edit Profile ▼"}
+  </Text>
+</TouchableOpacity>
 
-            Alert.alert(
-              "Edit Profile",
-              "Profile editing can be added here."
-            );
+{/* EDIT PROFILE FORM - VERTICAL LAYOUT */}
+{showEditProfile && (
+  <View style={styles.profileEditForm}>
 
-          }}
-        >
+    <Text style={styles.profileSectionTitle}>
+      Update Personal Details
+    </Text>
 
-          <Text style={styles.editProfileText}>
-            Edit Profile
-          </Text>
+    <Text style={styles.profileFieldLabel}>Full Name</Text>
 
-        </TouchableOpacity>
+    <TextInput
+      style={styles.profileField}
+      value={editName}
+      onChangeText={setEditName}
+      placeholder="Enter your name"
+    />
 
+    <Text style={styles.profileFieldLabel}>Email Address</Text>
+
+    <TextInput
+      style={styles.profileField}
+      value={editEmail}
+      onChangeText={setEditEmail}
+      placeholder="Enter your email"
+      keyboardType="email-address"
+      autoCapitalize="none"
+    />
+
+    <TouchableOpacity
+      style={styles.saveProfileButton}
+      onPress={() => {
+        if (!editName.trim() || !editEmail.trim()) {
+          Alert.alert("Missing Details", "Please enter your name and email.");
+          return;
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail.trim())) {
+          Alert.alert("Invalid Email", "Please enter a valid email address.");
+          return;
+        }
+
+        setUserName(editName.trim());
+        setUserEmail(editEmail.trim());
+        setShowEditProfile(false);
+
+        Alert.alert("Success", "Your profile has been updated.");
+      }}
+    >
+      <Text style={styles.buttonText}>Save Changes</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      style={styles.paymentButton}
+      onPress={() => {
+        setIsEditingProfile(false);
+      }}
+    >
+      <Text>Cancel</Text>
+    </TouchableOpacity>
+
+  </View>
+)}
 
         {/* PROFILE MENU */}
 
         <View style={styles.profileMenu}>
 
-
           {/* PAYMENT */}
 
-          <TouchableOpacity
-            style={styles.profileMenuItem}
-            onPress={() =>
-              Alert.alert(
-                "Payment",
-                "Payment information."
-              )
-            }
-          >
+<TouchableOpacity
+  style={styles.profileMenuItem}
+  onPress={() => setShowPayment(!showPayment)}
+>
+  <Text style={styles.profileMenuIcon}>💳</Text>
 
-            <Text style={styles.profileMenuIcon}>
-              💳
-            </Text>
+  <Text style={styles.profileMenuText}>
+    Payment
+  </Text>
 
-            <Text style={styles.profileMenuText}>
-              Payment
-            </Text>
+  <Text style={styles.dropdownArrow}>
+    {showPayment ? "▲" : "▼"}
+  </Text>
+</TouchableOpacity>
 
-          </TouchableOpacity>
+{showPayment && (
+  <View style={styles.profileDropdown}>
+
+    <Text style={styles.profileSectionTitle}>
+      Preferred Payment Method
+    </Text>
+
+    <TouchableOpacity
+      style={styles.paymentOption}
+      onPress={() => setPaymentMethod("Card")}
+    >
+      <Text>💳  Bank Card</Text>
+      <Text>
+        {paymentMethod === "Card" ? "✓ Selected" : "Select"}
+      </Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      style={styles.paymentOption}
+      onPress={() => setPaymentMethod("PayPal")}
+    >
+      <Text>PayPal</Text>
+      <Text>
+        {paymentMethod === "PayPal" ? "✓ Selected" : "Select"}
+      </Text>
+    </TouchableOpacity>
+
+    <Text style={styles.savedAddress}>
+      Preferred method: {paymentMethod}
+    </Text>
+
+    <Text style={styles.paymentNote}>
+      This is a saved preference for your app demonstration.
+      No payment details are stored or processed here.
+    </Text>
+
+  </View>
+)}
 
 
           {/* Location */}
 
-          <TouchableOpacity
-            style={styles.profileMenuItem}
-            onPress={() =>
-              Alert.alert(
-                "My Location",
-                "Location settings."
-              )
-            }
-          >
+<TouchableOpacity
+  style={styles.profileMenuItem}
+  onPress={() => {
+  setEditLocation(profileLocation);
+  setShowLocation(!showLocation);
+}}>
+  <Text style={styles.profileMenuIcon}>📍</Text>
 
-            <Text style={styles.profileMenuIcon}>
-              📍
-            </Text>
+  <Text style={styles.profileMenuText}>
+    My Location
+  </Text>
 
-            <Text style={styles.profileMenuText}>
-              My Location
-            </Text>
+  <Text style={styles.dropdownArrow}>
+    {showLocation ? "▲" : "▼"}
+  </Text>
+</TouchableOpacity>
 
-          </TouchableOpacity>
+{showLocation && (
+  <View style={styles.profileDropdown}>
+
+    <Text style={styles.profileFieldLabel}>
+      Delivery Address
+    </Text>
+
+    <TextInput
+      style={styles.profileField}
+      placeholder="Enter your delivery address"
+      value={editLocation}
+      onChangeText={setEditLocation}
+      multiline
+    />
+
+    <TouchableOpacity
+      style={styles.saveProfileButton}
+      onPress={() => {
+        if (editLocation.trim() === "") {
+          Alert.alert(
+            "Missing Address",
+            "Please enter your delivery address."
+          );
+          return;
+        }
+
+        setProfileLocation(editLocation.trim());
+
+        Alert.alert(
+          "Location Saved",
+          "Your delivery address has been updated."
+        );
+
+        setShowLocation(false);
+      }}
+    >
+      <Text style={styles.buttonText}>Save Address</Text>
+    </TouchableOpacity>
+
+    {profileLocation !== "" && (
+      <Text style={styles.savedAddress}>
+        Saved address: {profileLocation}
+      </Text>
+    )}
+
+  </View>
+)}
 
 
           {/* Notifications */}
+          
+<TouchableOpacity
+  style={styles.profileMenuItem}
+  onPress={() => {
+    setNotificationsEnabled(!notificationsEnabled);
 
-          <TouchableOpacity
-            style={styles.profileMenuItem}
-            onPress={() =>
-              Alert.alert(
-                "Notifications",
-                "Notification settings."
-              )
-            }
-          >
+    Alert.alert(
+      "Notifications",
+      notificationsEnabled
+        ? "Notifications have been turned off."
+        : "Notifications have been turned on."
+    );
+  }}
+>
+  <Text style={styles.profileMenuIcon}>🔔</Text>
 
-            <Text style={styles.profileMenuIcon}>
-              🔔
-            </Text>
+  <Text style={styles.profileMenuText}>
+    Notifications: {notificationsEnabled ? "ON" : "OFF"}
+  </Text>
+</TouchableOpacity>
 
-            <Text style={styles.profileMenuText}>
-              Notifications
-            </Text>
-
-          </TouchableOpacity>
 
 
           {/* ABOUT */}
@@ -2918,10 +3323,9 @@ if (screen === "profile") {
 
 }
 
- // Fallback render for other screens
-  return null;
-};
+ return null;
 
+}
 
 //--Styles --//
 
@@ -2929,7 +3333,7 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-    backgroundColor:"#F7F7F7"
+    backgroundColor:"#F7F7F7",
   },
 
   splashContainer: {
@@ -3600,6 +4004,7 @@ navigationText: {
     backgroundColor: "#E5E5E5",
     justifyContent: "center",
     alignItems: "center",
+    textAlign: "center",
     borderRadius: 10,
   },
 
@@ -3933,7 +4338,3 @@ profileMenuText: {
   },
    
 });
-
-function setErrorMessage(arg0: string) {
-throw new Error('Function not implemented.');
-}
